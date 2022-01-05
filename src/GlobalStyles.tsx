@@ -40,6 +40,8 @@ footer, header, hgroup, menu, nav, section {
 body {
 	line-height: 1;
 	font-family :'Source Sans Pro',sans-serif;
+	color:${(props) => props.theme.white.darker};
+	background-color:${(props) => props.theme.black.veryDark};
 
 }
 ol, ul {

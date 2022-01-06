@@ -3,7 +3,7 @@ import { useQuery } from "react-query";
 import { getMovies, IGetMoviesResult } from "../api";
 import styled from "styled-components";
 import { makeImagePath } from "../utils";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useViewportScroll } from "framer-motion";
 import { useMatch, useNavigate } from "react-router-dom";
 
 const Wrapper = styled.div`
@@ -80,6 +80,47 @@ const Info = styled(motion.div)`
   }
 `;
 
+const Overlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  opacity: 1;
+`;
+
+const BigMovie = styled(motion.div)`
+  position: absolute;
+  width: 40vw;
+  height: 80vh;
+  left: 0;
+  right: 0;
+  background-color: blue;
+  margin: 0 auto;
+`;
+
+const BigOverview = styled.p`
+  padding: 20px;
+  position: relative;
+  top: -80px;
+  color: ${(props) => props.theme.white.lighter};
+`;
+
+const BigCover = styled.div`
+  width: 100%;
+  background-size: cover;
+  background-position: center center;
+  height: 400px;
+`;
+
+const BigTitle = styled.h3`
+  color: ${(props) => props.theme.white.lighter};
+  padding: 20px;
+  font-size: 46px;
+  position: relative;
+  top: -80px;
+`;
+
 const rowVariants = {
   hidden: {
     x: window.outerWidth + 10,
@@ -126,6 +167,15 @@ const Home = () => {
   const [index, setIndex] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const navigation = useNavigate();
+  const { scrollY } = useViewportScroll();
+  const clickedMovie =
+    movieMatch?.params.movieId &&
+    data?.results.find((movie) => {
+      if (movieMatch.params.movieId) {
+        return movie.id === +movieMatch.params.movieId;
+      }
+      return false;
+    });
   const increaseIndex = () => {
     if (data) {
       if (leaving) return;
@@ -139,6 +189,10 @@ const Home = () => {
 
   const onBoxClick = (movieId: number) => {
     navigation(`/movies/${movieId}`, { replace: true });
+  };
+
+  const onOverlayClick = () => {
+    navigation("/");
   };
 
   return (
@@ -173,6 +227,7 @@ const Home = () => {
                       transition={{ type: "tween" }}
                       initial="normal"
                       whileHover="hover"
+                      layoutId={movie.id + ""}
                       key={movie.id}
                       bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
                       onClick={() => onBoxClick(movie.id)}
@@ -187,18 +242,26 @@ const Home = () => {
           </Slider>
           <AnimatePresence>
             {movieMatch && (
-              <motion.div
-                style={{
-                  position: "absolute",
-                  width: "40vw",
-                  height: "80vh",
-                  backgroundColor: "red",
-                  top: 60,
-                  left: 0,
-                  right: 0,
-                  margin: "0 auto",
-                }}
-              ></motion.div>
+              <>
+                <Overlay onClick={onOverlayClick} exit={{ opacity: 0 }}>
+                  <BigMovie layoutId={movieMatch.params.movieId} style={{ top: scrollY.get() }}>
+                    {clickedMovie && (
+                      <>
+                        <BigCover
+                          style={{
+                            backgroundImage: `linear-gradient(to top, black, transparent), url(${makeImagePath(
+                              clickedMovie.backdrop_path,
+                              "w500"
+                            )})`,
+                          }}
+                        />
+                        <BigTitle>{clickedMovie.title}</BigTitle>
+                        <BigOverview>{clickedMovie.overview}</BigOverview>
+                      </>
+                    )}
+                  </BigMovie>
+                </Overlay>
+              </>
             )}
           </AnimatePresence>
         </>

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { motion, useAnimation, useViewportScroll } from "framer-motion";
-import { Link, useMatch } from "react-router-dom";
+import { Link, useMatch, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
 
 const Nav = styled(motion.div)`
   display: flex;
@@ -13,7 +14,6 @@ const Nav = styled(motion.div)`
   font-size: 14px;
   padding: 20px 60px;
   color: white;
-  z-index: 10;
 `;
 
 const Col = styled.div`
@@ -51,7 +51,7 @@ const Logo = styled(motion.svg)`
   }
 `;
 
-const Search = styled.span`
+const Search = styled.form`
   color: white;
   display: flex;
   align-items: center;
@@ -106,12 +106,17 @@ const navVariants = {
   },
 };
 
+interface IForm {
+  keyword: string;
+}
 const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const homeMatch = useMatch("/");
   const tvMatch = useMatch("/tv");
   const { scrollY } = useViewportScroll();
   const navAnimation = useAnimation();
+  const { register, handleSubmit } = useForm<IForm>();
+  const navigation = useNavigate();
 
   useEffect(() => {
     scrollY.onChange(() => {
@@ -125,6 +130,10 @@ const Header = () => {
 
   // functions
   const openSearch = () => setSearchOpen((prev) => !prev);
+
+  const onValid = (data: IForm) => {
+    navigation(`/search?keyword=${data.keyword}`);
+  };
 
   return (
     <Nav variants={navVariants} initial="top" animate={navAnimation}>
@@ -153,7 +162,7 @@ const Header = () => {
         </Items>
       </Col>
       <Col>
-        <Search>
+        <Search onSubmit={handleSubmit(onValid)}>
           <motion.svg
             animate={{ x: searchOpen ? -230 : 0 }}
             transition={{ type: "linear" }}
@@ -169,6 +178,7 @@ const Header = () => {
             ></path>
           </motion.svg>
           <Input
+            {...register("keyword", { required: true, minLength: 2 })}
             transition={{ type: "linear" }}
             animate={{ scaleX: searchOpen ? 1 : 0 }}
             placeholder="Search for movie or tv show"
